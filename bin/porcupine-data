@@ -3,7 +3,7 @@
 var d3 = require("d3"),
     // nj = require("../assets/model/numjs.js"),
     // nj = require("numjs"),
-    Model = require("../assets/model/node-bundle.js"),
+    Model = require("../public/assets/model/node-bundle.js"),
     SimpleModel = require("../assets/model/simple-model.js"),
     ProgressBar = require('progress');
 
@@ -12,13 +12,13 @@ var coordinates = [];
 var data = [];
 
 process.stdin.setEncoding('utf8');
-process.stdin.on('readable', () => {
+process.stdin.on('readable', function() {
   var chunk = process.stdin.read();
   if (chunk !== null) {
     json += chunk.toString();
   }
 });
-process.stdin.on('end', () => {
+process.stdin.on('end', function() {
   render(JSON.parse(json))
 });
 

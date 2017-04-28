@@ -1,5 +1,6 @@
 STROKES = $(shell ls strokes/*.json)
 VALIDATIONS = $(shell ls validation-data/*.json)
+#$(shell npm install numjs)
 
 # STROKES = strokes/001.json \
 # strokes/002.json \
