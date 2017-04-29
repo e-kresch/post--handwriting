@@ -4,7 +4,7 @@ var d3 = require("d3"),
     // nj = require("../assets/model/numjs.js"),
     // nj = require("numjs"),
     Model = require("../public/assets/model/node-bundle.js"),
-    SimpleModel = require("../assets/model/simple-model.js"),
+    SimpleModel = require("assets/model/simple-model.js"),
     ProgressBar = require('progress');
 
 var json = "";
