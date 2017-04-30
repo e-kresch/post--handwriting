@@ -71,7 +71,7 @@ Polymer({
   is: "figure-predict",
   initialize: function() {
     var that = this;
-    //this.color = d3.scaleSequential(d3.interpolateBrBG).domain([-3, 3]);
+    this.color = d3.scaleSequential(d3.interpolateBrBG).domain([-3, 3]);
     this.root = d3.select(this);
     this.canvas = this.root.select("canvas");
     this.svg = this.root.select("svg");
@@ -88,7 +88,8 @@ Polymer({
     this.worker = new Worker("assets/worker-predict.js");
     this.worker.onmessage = function(event) {
       that.renderCoordinates.call(that, that.userCoordinates, that.context);
-      that.renderPrediction.call(that, event.data[0], event.data[1] + Math.random() * 50, event.data[2]);
+      //that.renderPrediction.call(that, event.data[0]+ (Math.random() * 25), event.data[1] + (Math.random() * 25), event.data[2]);
+      that.renderPrediction.call(that, (Math.random() * 25), (Math.random() * 25), event.data[2]);
       that.pending = false;
       if (that.playing) that.play();
     }
@@ -280,28 +281,31 @@ Polymer({
   },
 
   renderPrediction: function(x1, y1, coordinates) {
-    //this.context.fillStyle = "white";
-    //this.context.globalAlpha = 0.3;
-    //this.context.fillRect(0, 0, this.width, this.height);
-    //this.context.strokeStyle = this.color(-1);
-    //this.context.fillStyle = this.color(-1)
     this.context.lineWidth = 1;
-  //  this.context.globalAlpha = 1;
+    var red = Math.floor( Math.random() * 255);
+    var blue = Math.floor(Math.random() * 255);
+    var green = Math.floor(Math.random() * 255);
+    var magnifaction = Math.random();
+    this.context.strokeStyle = "rgb(" + red+ ", "+ blue + ", " + green + ")"
     var penState = this.userCoordinates.length ? this.userCoordinates[this.userCoordinates.length - 1][2] : 1;
     var that = this;
+    this.context.beginPath();
     coordinates.forEach(function(coords) {
       var dx = coords[0],
           dy = coords[1];
-      that.context.beginPath();
       that.context.moveTo(that.xScale(x1), that.yScale(y1));
-      if (!penState) that.context.lineTo(that.xScale(x1 + dx), that.yScale(y1 + dy));
+      if (!penState){
+        that.context.lineTo(that.xScale(x1 + (dx * magnifaction)), that.yScale(y1 + (dy * magnifaction)));
+      }
+      else {
+        that.context.beginPath()
+      }
+
       that.context.stroke();
-      that.context.beginPath();
-      that.context.arc(that.xScale(x1 + dx), that.yScale(y1 + dy), 1.2, 0, Math.PI * 2)
       that.context.fill();
       penState = coords[2];
-      x1 += dx;
-      y1 += dy;
+      x1 = x1 + (dx * magnifaction);
+      y1 = y1 + (dy * magnifaction);
     });
   },
 
