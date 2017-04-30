@@ -2,7 +2,7 @@
   figure-predict {
     display: block;
     position: relative;
-    height: 400px;
+    height: 600px;
   }
   figure-predict svg {
     pointer-events: none;
@@ -60,7 +60,10 @@
       </g>
     </svg>
     <canvas></canvas>
+    <div class="userInput"></div>
+    <span> TEST DATA</span>
   </template>
+
 </dom-module>
 
 <script>
@@ -68,8 +71,7 @@ Polymer({
   is: "figure-predict",
   initialize: function() {
     var that = this;
-    this.color = d3.scaleSequential(d3.interpolateBrBG).domain([-3, 3]);
-
+    //this.color = d3.scaleSequential(d3.interpolateBrBG).domain([-3, 3]);
     this.root = d3.select(this);
     this.canvas = this.root.select("canvas");
     this.svg = this.root.select("svg");
@@ -86,7 +88,7 @@ Polymer({
     this.worker = new Worker("assets/worker-predict.js");
     this.worker.onmessage = function(event) {
       that.renderCoordinates.call(that, that.userCoordinates, that.context);
-      that.renderPrediction.call(that, event.data[0], event.data[1], event.data[2]);
+      that.renderPrediction.call(that, event.data[0], event.data[1] + Math.random() * 50, event.data[2]);
       that.pending = false;
       if (that.playing) that.play();
     }
@@ -113,6 +115,8 @@ Polymer({
 
     this.width = bbox.width;
     this.height = bbox.height;
+
+
 
     this.temperature = +this.getAttribute("temperature");
 
@@ -197,7 +201,7 @@ Polymer({
         that.tempy = d3.event.y;
         that.tempdx = 0;
         that.tempdy = 0;
-        // console.log("coords", that.userCoordinates)
+        console.log("coords", that.userCoordinates)
       }
     }
 
@@ -276,13 +280,13 @@ Polymer({
   },
 
   renderPrediction: function(x1, y1, coordinates) {
-    this.context.fillStyle = "white";
-    this.context.globalAlpha = 0.3;
-    this.context.fillRect(0, 0, this.width, this.height);
-    this.context.strokeStyle = this.color(-1);
-    this.context.fillStyle = this.color(-1)
+    //this.context.fillStyle = "white";
+    //this.context.globalAlpha = 0.3;
+    //this.context.fillRect(0, 0, this.width, this.height);
+    //this.context.strokeStyle = this.color(-1);
+    //this.context.fillStyle = this.color(-1)
     this.context.lineWidth = 1;
-    this.context.globalAlpha = 1;
+  //  this.context.globalAlpha = 1;
     var penState = this.userCoordinates.length ? this.userCoordinates[this.userCoordinates.length - 1][2] : 1;
     var that = this;
     coordinates.forEach(function(coords) {
@@ -309,6 +313,16 @@ Polymer({
     this.playing = !this.playing;
     if(this.playing) this.play();
   },
+
+  setTest: function() {
+    //alert(this.svg.select(".user path").attr("d"))
+    //alert(this.svg.select(".prompt").text())
+    this.svg.select(".prompt text").text( this.svg.select(".user path")
+        .attr("d"));
+
+  },
+
+
   setTemperature: function(val) {
     this.temperature = +val;
   },

@@ -1,0 +1,26 @@
+<script src="assets/webcomponents-lite.min.js"></script>
+
+<link rel="import" href="assets/polymer-mini.html">
+<script src="assets/d3.min.js"></script>
+<script src="assets/d3-scale-chromatic.min.js"></script>
+<link rel="import" href="assets/distill-stage-manager.html">
+<link rel="import" href="assets/figure-predict.html">
+
+<div style="position: relative;">
+  <div style="position: absolute; width: 100%;">
+    <div class="controls w-page" id="figure-predict-controls" style="text-align: center;z-index: 10;position: relative;margin-top: 18px;">
+      <button onclick="document.querySelector('figure-predict').playToggle()">Play/Pause</button>
+      <button onclick="document.querySelector('figure-predict').clear()">Clear</button>
+      <button onclick="document.querySelector('figure-predict').setTest()">Set</button>
+      <span style="margin-left: 18px;">Length of prediction</span>
+      <input type="range" value="20" min="5" max="200" step="5" oninput="document.querySelector('figure-predict').setPredictionLength(this.value); document.querySelector('#figure-predict-controls .prediction-length').textContent = this.value;" style="width: 70px;"/>
+      <span class="prediction-length" style="display: inline-block; width: 18px; text-align: left; margin-left: 6px;">20</span>
+
+      <span style="margin-left: 18px;">Variation<sup><a href="#footnote1">1</a></sup></span>
+      <input type="range" value="0.1" min="0.1" max="0.7" step="0.05" oninput="document.querySelector('figure-predict').setTemperature(this.value); document.querySelector('#figure-predict-controls .temperature').textContent = this.value;" style="width: 70px;"/>
+      <span class="temperature" style="display: inline-block; width: 40px;">0.1</span>
+
+    </div>
+  </div>
+  <figure-predict class="w-screen" temperature="0.1" predictionlength="20"></figure-predict>
+</div>
