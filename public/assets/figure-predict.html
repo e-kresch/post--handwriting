@@ -7,21 +7,31 @@
   figure-predict svg {
     pointer-events: none;
     position: absolute;
-    top: 0;
+    top: 0px;
     left: 0;
     display: block;
-    width: 100%;
-    height: 100%;
+    width: 300px;
+    height: 150px;
+    border: 1px solid black
   }
-  figure-predict canvas {
+  figure-predict #user-input {
     position: absolute;
-    top: 0;
-    left: 0;
     display: block;
-    width: 100%;
-    height: 100%;
-    mix-blend-mode: multiply;
+    width: 300px;
+    height: 150px;
+
   }
+
+  figure-predict #prediction-output {
+    position: absolute;
+    top: 200px;
+    left: 0px;
+    display: block;
+    width: 100px;
+    height: 150px;
+
+  }
+
   figure-predict .user path {
     fill: none;
     stroke: rgb(49, 145, 137);
@@ -49,19 +59,15 @@
     <svg>
       <g class="user">
         <g class="prompt">
-          <text dx="-5" dy="-12">Start writing here and the network will try to generate new strokes in your style</text>
-          <circle r="5"></circle>
         </g>
-        <line></line>
         <path></path>
       </g>
       <g class="predictions">
 
       </g>
     </svg>
-    <canvas></canvas>
-    <div class="userInput"></div>
-    <span> TEST DATA</span>
+      <canvas id = "user-input"></canvas>
+    <canvas id = "prediction-output"></canvas>
   </template>
 
 </dom-module>
@@ -70,10 +76,15 @@
 Polymer({
   is: "figure-predict",
   initialize: function() {
+    console.log("init");
     var that = this;
     this.color = d3.scaleSequential(d3.interpolateBrBG).domain([-3, 3]);
     this.root = d3.select(this);
+
     this.canvas = this.root.select("canvas");
+    this.userCanvas = this.root.select("#user-input");
+    this.predictionCanvas = this.root.selectAll( "#prediction-output");
+
     this.svg = this.root.select("svg");
 
     this.xScale = d3.scaleLinear();
@@ -87,10 +98,10 @@ Polymer({
 
     this.worker = new Worker("assets/worker-predict.js");
     this.worker.onmessage = function(event) {
-      that.renderCoordinates.call(that, that.userCoordinates, that.context);
+    that.renderCoordinates.call(that, that.userCoordinates, that.userContext);
       //that.renderPrediction.call(that, event.data[0]+ (Math.random() * 25), event.data[1] + (Math.random() * 25), event.data[2]);
-      that.renderPrediction.call(that, (Math.random() * 25), (Math.random() * 25), event.data[2]);
-      that.pending = false;
+    that.renderPrediction.call(that, (Math.random() * 40) ,  (Math.random() * 40) , event.data[2]);
+    that.pending = false;
       if (that.playing) that.play();
     }
 
@@ -112,19 +123,26 @@ Polymer({
     this.playing = false;
   },
   resize: function() {
+
+    console.log("resize");
     var bbox = this.getBoundingClientRect();
 
-    this.width = bbox.width;
-    this.height = bbox.height;
-
-
+    //this.width = bbox.width;
+    //this.height = bbox.height;
+    this.width  = this.root.select("svg").attr("width");
+    this.height = this.root.select("svg").attr("height");
+    console.log(this.root.select("svg").style.width)
+    console.log(this.root.select("svg").attr("top"));
+    console.log(this.height);
 
     this.temperature = +this.getAttribute("temperature");
 
-    this.canvas.property("width", this.width);
-    this.canvas.property("height", this.height);
+    this.userCanvas.property("width", this.width);
+    this.userCanvas.property("height", this.height);
 
     this.context = this.canvas.node().getContext("2d");
+    this.userContext = this.userCanvas.node().getContext("2d");
+    this.predictionContext = this.predictionCanvas.node().getContext("2d");
 
     var zoom = 18;
     this.origin = [150, this.height / 3];
@@ -141,7 +159,7 @@ Polymer({
     this.dy = 0;
     this.userCoordinates = [];
     this.clearCanvas();
-    this.renderCoordinates(this.userCoordinates, this.context);
+    this.renderCoordinates(this.userCoordinates, this.userContext);
     this.worker.postMessage({
       reset: true,
     });
@@ -149,15 +167,17 @@ Polymer({
   },
   ready: function() {
     var that = this;
+    console.log("ready");
     this.initialize();
 
     var drag = d3.drag()
-        .container(this)
+        .container(this) //do I need to change this?
         .on("start", drawStart) // after a new pointer becomes active (on mousedown or touchstart)
         .on("drag", draw) // after an active pointer moves (on mousemove or touchmove)
         .on("end", drawEnd);
 
-    this.canvas.call(drag);
+    //this.userCanvas.call(drag);
+    this.userCanvas.call(drag);
 
     distill.stageManager.add(this, {
       enterStage: this.play,
@@ -166,7 +186,7 @@ Polymer({
 
     this.play();
 
-    var context = this.context;
+    //var context = this.context;
     this.tempdx = 0;
     this.tempdy = 0;
     this.tempx = 0;
@@ -176,12 +196,13 @@ Polymer({
       // if (that.userCoordinates.length) {
       //   that.userCoordinates[that.userCoordinates.length - 1][2] = 1;
       // }
+      console.log("drawStart");
       that.dx = that.xScale.invert(d3.event.x) - that.xScale.invert(that.x);
       that.dy = that.yScale.invert(d3.event.y) - that.yScale.invert(that.y);
       that.userCoordinates.push([that.dx, that.dy, 0]);
       that.worker.postMessage({update: [that.dx, that.dy, 0]});
       that.clearCanvas();
-      that.renderCoordinates.call(that, that.userCoordinates, that.context);
+      that.renderCoordinates.call(that, that.userCoordinates, that.userContext);
       that.tempdx = 0;
       that.tempdy = 0;
       that.tempx = d3.event.x;
@@ -197,12 +218,12 @@ Polymer({
         that.userCoordinates.push([that.dx, that.dy, 0]);
         that.worker.postMessage({update: [that.dx, that.dy, 0]});
         that.clearCanvas();
-        that.renderCoordinates.call(that, that.userCoordinates, that.context);
+        that.renderCoordinates.call(that, that.userCoordinates, that.userContext);
         that.tempx = d3.event.x;
         that.tempy = d3.event.y;
         that.tempdx = 0;
         that.tempdy = 0;
-        console.log("coords", that.userCoordinates)
+        //console.log("coords", that.userCoordinates)
       }
     }
 
@@ -213,7 +234,7 @@ Polymer({
         that.userCoordinates.push([that.dx, that.dy, 1]);
         that.worker.postMessage({update: [that.dx, that.dy, 1]});
         that.clearCanvas();
-        that.renderCoordinates.call(that, that.userCoordinates, that.context);
+        that.renderCoordinates.call(that, that.userCoordinates, that.userContext);
         that.tempx = d3.event.x;
         that.tempy = d3.event.y;
         that.tempdx = 0;
@@ -224,7 +245,7 @@ Polymer({
     }
   },
   clearCanvas: function() {
-    this.context.clearRect(0, 0, this.width, this.height);
+    this.userContext.clearRect(0, 0, this.width, this.height);
   },
   renderCoordinates: function(coordinates, context) {
     var that = this;
@@ -281,31 +302,39 @@ Polymer({
   },
 
   renderPrediction: function(x1, y1, coordinates) {
-    this.context.lineWidth = 1;
+    //console.log("new coord");
+    this.predictionContext.lineWidth = 1;
     var red = Math.floor( Math.random() * 255);
     var blue = Math.floor(Math.random() * 255);
     var green = Math.floor(Math.random() * 255);
-    var magnifaction = Math.random();
-    this.context.strokeStyle = "rgb(" + red+ ", "+ blue + ", " + green + ")"
+    var magnifaction = Math.random() * 20;
+    this.predictionContext.strokeStyle = "rgb(" + red+ ", "+ blue + ", " + green + ")"
     var penState = this.userCoordinates.length ? this.userCoordinates[this.userCoordinates.length - 1][2] : 1;
     var that = this;
-    this.context.beginPath();
+    this.predictionContext.beginPath();
     coordinates.forEach(function(coords) {
       var dx = coords[0],
           dy = coords[1];
-      that.context.moveTo(that.xScale(x1), that.yScale(y1));
+    //that.predictionContext.moveTo(that.xScale(x1), that.yScale(y1));
+    that.predictionContext.moveTo(x1, y1);
+    //console.log("moveTo " + x1 + ", " +  y1);
+    //console.log("moveTo " + that.xScale(x1) + ", " +  that.yScale(y1));
       if (!penState){
-        that.context.lineTo(that.xScale(x1 + (dx * magnifaction)), that.yScale(y1 + (dy * magnifaction)));
+        //that.predictionContext.lineTo(that.xScale(x1 + (dx * magnifaction)), that.yScale(y1 + (dy * magnifaction)));
+        //console.log("lineTo " +  that.xScale(x1 + (dx * magnifaction)) + ", " + that.yScale(y1 + (dy * magnifaction)));
+        that.predictionContext.lineTo(x1 + (dx * magnifaction), y1 + (dy * magnifaction));
+        //console.log("lineTo " + x1 + (dx * magnifaction) + ", " +  y1 + (dy * magnifaction));
       }
       else {
-        that.context.beginPath()
+        that.predictionContext.beginPath()
       }
 
-      that.context.stroke();
-      that.context.fill();
+      that.predictionContext.stroke();
+      that.predictionContext.fill();
       penState = coords[2];
       x1 = x1 + (dx * magnifaction);
-      y1 = y1 + (dy * magnifaction);
+      y1 = (y1 + (dy * magnifaction))  % 150;
+      //console.log("x1, y1 " + x1 + " " + y1);
     });
   },
 
@@ -335,7 +364,18 @@ Polymer({
   },
   clear: function() {
     this.reset();
-  }
+  },
+  Grab: function(evt) {
+    console.log("svgGrab");
+  },
+
+   Drag: function(evt) {
+     console.log("svgDrag");
+   },
+
+   Drop: function(evt) {
+     console.log("svgDrop");
+   }
 
 
 });

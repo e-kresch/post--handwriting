@@ -33,12 +33,12 @@
 <link rel="import" href="assets/distill-stage-manager.html">
 
 <!-- <link rel="import" href="assets/figure-gaussian.html"> -->
-<!--<link rel="import" href="assets/figure-animated.html"> -->
+<link rel="import" href="assets/figure-animated.html">
 <link rel="import" href="assets/figure-predict.html">
-<!--<link rel="import" href="assets/figure-hairs.html"> -->
+<link rel="import" href="assets/figure-hairs.html">
 <!-- <link rel="import" href="assets/figure-normalize.html"> -->
-<!--<link rel="import" href="assets/figure-cells.html"> -->
-<!--<link rel="import" href="assets/figure-cells-draw.html"> -->
+<link rel="import" href="assets/figure-cells.html">
+<link rel="import" href="assets/figure-cells-draw.html">
 
 <style>
   .intro h2 {
@@ -119,7 +119,7 @@
       <div class="controls w-page" id="figure-predict-controls" style="text-align: center;z-index: 10;position: relative;margin-top: 18px;">
         <button onclick="document.querySelector('figure-predict').playToggle()">Play/Pause</button>
         <button onclick="document.querySelector('figure-predict').clear()">Clear</button>
-        <button onclick="document.querySelector('figure-predict').setTest()">Set</button>
+
         <span style="margin-left: 18px;">Length of prediction</span>
         <input type="range" value="20" min="5" max="200" step="5" oninput="document.querySelector('figure-predict').setPredictionLength(this.value); document.querySelector('#figure-predict-controls .prediction-length').textContent = this.value;" style="width: 70px;"/>
         <span class="prediction-length" style="display: inline-block; width: 18px; text-align: left; margin-left: 6px;">20</span>
