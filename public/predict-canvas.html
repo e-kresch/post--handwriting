@@ -7,15 +7,15 @@
 <link rel="import" href="assets/figure-predict.html">
 
 <div style="position: relative;">
-  <figure-predict class="w-screen" temperature="0.1" predictionlength="20"></figure-predict>
+  <figure-predict class="w-screen" temperature="0.1" predictionlength="150"></figure-predict>
   <div style="position: absolute; width: 100%;">
     <div class="controls w-page" id="figure-predict-controls" style="text-align: center;z-index: 10;position: relative;margin-top: 18px;">
       <button onclick="document.querySelector('figure-predict').playToggle()">Play/Pause</button>
       <button onclick="document.querySelector('figure-predict').clear()">Clear</button>
       <button onclick="document.querySelector('figure-predict').setTest()">Set</button>
       <span style="margin-left: 18px;">Length of prediction</span>
-      <input type="range" value="20" min="5" max="200" step="5" oninput="document.querySelector('figure-predict').setPredictionLength(this.value); document.querySelector('#figure-predict-controls .prediction-length').textContent = this.value;" style="width: 70px;"/>
-      <span class="prediction-length" style="display: inline-block; width: 18px; text-align: left; margin-left: 6px;">20</span>
+      <input type="range" value="150" min="5" max="200" step="5" oninput="document.querySelector('figure-predict').setPredictionLength(this.value); document.querySelector('#figure-predict-controls .prediction-length').textContent = this.value;" style="width: 70px;"/>
+      <span class="prediction-length" style="display: inline-block; width: 18px; text-align: left; margin-left: 6px;">150</span>
 
       <span style="margin-left: 18px;">Variation<sup><a href="#footnote1">1</a></sup></span>
       <input type="range" value="0.1" min="0.1" max="0.7" step="0.05" oninput="document.querySelector('figure-predict').setTemperature(this.value); document.querySelector('#figure-predict-controls .temperature').textContent = this.value;" style="width: 70px;"/>

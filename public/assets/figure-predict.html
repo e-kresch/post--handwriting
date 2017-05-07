@@ -7,17 +7,15 @@
   figure-predict svg {
     pointer-events: none;
     position: absolute;
-    top: 0px;
-    left: 0;
     display: block;
-    width: 300px;
+    width: 100%;
     height: 150px;
     border: 1px solid black
   }
   figure-predict #user-input {
     position: absolute;
     display: block;
-    width: 300px;
+    width: 100%;
     height: 150px;
 
   }
@@ -27,7 +25,7 @@
     top: 200px;
     left: 0px;
     display: block;
-    width: 350px;
+    width: 100%;
     height: 150px;
 
   }
@@ -77,8 +75,8 @@ Polymer({
   is: "figure-predict",
   initialize: function() {
     console.log("init");
-    var that = this;
     this.color = d3.scaleSequential(d3.interpolateBrBG).domain([-3, 3]);
+    var that = this;
     this.root = d3.select(this);
 
     this.canvas = this.root.select("canvas");
@@ -94,16 +92,23 @@ Polymer({
     this.temperature = +this.getAttribute("temperature");
     this.userCoordinates = [];
 
+    this.predictionStack = [];
+
     this.pending = false;
+    this.count = 0;
 
     this.worker = new Worker("assets/worker-predict.js");
     this.worker.onmessage = function(event) {
     that.renderCoordinates.call(that, that.userCoordinates, that.userContext);
-      //that.renderPrediction.call(that, event.data[0]+ (Math.random() * 25), event.data[1] + (Math.random() * 25), event.data[2]);
-    that.renderPrediction.call(that, (Math.random() * 40) ,  (Math.random() * 40) , event.data[2]);
+
+    if( that.predictionStack.length  > 3) { that.predictionStack = []}
+    that.predictionStack.push(event.data[2]);
+    //that.renderPrediction.call(that, (Math.random() * 40) ,  (Math.random() * 40) , event.data[2]);
     that.pending = false;
       if (that.playing) that.play();
     }
+
+    setInterval(this.renderPrediction, 2000, that);
 
     window.addEventListener("resize", this.resize.bind(this));
     this.reset();
@@ -119,22 +124,24 @@ Polymer({
       });
     }
   },
+
+  togglePending : function(that)
+  {
+    that.pending = !that.pending;
+  },
+
+
   pause: function() {
     this.playing = false;
   },
   resize: function() {
 
-    console.log("resize");
     var bbox = this.getBoundingClientRect();
 
-    //this.width = bbox.width;
-    //this.height = bbox.height;
+    this.width = bbox.width;
+    this.height = bbox.height;
     this.width  = this.root.select("svg").attr("width");
     this.height = this.root.select("svg").attr("height");
-    console.log(this.root.select("svg").style.width)
-    console.log(this.root.select("svg").attr("top"));
-    console.log(this.height);
-
     this.temperature = +this.getAttribute("temperature");
 
     this.userCanvas.property("width", this.width);
@@ -149,6 +156,7 @@ Polymer({
 
     this.xScale.domain([0, 100]).range([this.origin[0], this.origin[0] + zoom * 100]);
     this.yScale = d3.scaleLinear().domain([0, 100]).range([this.origin[1], this.origin[1] + zoom * 100]);
+    console.log(this.xScale + " " + this.yScale);
 
   },
   reset: function() {
@@ -197,6 +205,7 @@ Polymer({
       //   that.userCoordinates[that.userCoordinates.length - 1][2] = 1;
       // }
       console.log("drawStart");
+      that.resetPrediction();
       that.dx = that.xScale.invert(d3.event.x) - that.xScale.invert(that.x);
       that.dy = that.yScale.invert(d3.event.y) - that.yScale.invert(that.y);
       that.userCoordinates.push([that.dx, that.dy, 0]);
@@ -210,6 +219,7 @@ Polymer({
     }
 
     function draw() {
+      that.resetPrediction();
       that.tempdx = d3.event.dx + that.tempdx;
       that.tempdy = d3.event.dy + that.tempdy;
       if ((that.tempdx * that.tempdx + that.tempdy * that.tempdy) > 30) {
@@ -228,6 +238,7 @@ Polymer({
     }
 
     function drawEnd() {
+      that.resetPrediction();
       if ((that.tempdx * that.tempdx + that.tempdy * that.tempdy) <= 30) {
         that.dx = that.xScale.invert(that.tempx) - that.xScale.invert(that.tempx - that.tempdx);
         that.dy = that.yScale.invert(that.tempy) - that.yScale.invert(that.tempy - that.tempdy);
@@ -301,41 +312,53 @@ Polymer({
     userPoint.exit().remove();
   },
 
-  renderPrediction: function(x1, y1, coordinates) {
-    //console.log("new coord");
-    this.predictionContext.lineWidth = 1;
-    var red = Math.floor( Math.random() * 255);
-    var blue = Math.floor(Math.random() * 255);
-    var green = Math.floor(Math.random() * 255);
-    var magnifaction = Math.random() * 20;
-    this.predictionContext.strokeStyle = "rgb(" + red+ ", "+ blue + ", " + green + ")"
-    var penState = this.userCoordinates.length ? this.userCoordinates[this.userCoordinates.length - 1][2] : 1;
-    var that = this;
-    this.predictionContext.beginPath();
-    coordinates.forEach(function(coords) {
-      var dx = coords[0],
-          dy = coords[1];
-    //that.predictionContext.moveTo(that.xScale(x1), that.yScale(y1));
-    that.predictionContext.moveTo(x1, y1);
-    //console.log("moveTo " + x1 + ", " +  y1);
-    //console.log("moveTo " + that.xScale(x1) + ", " +  that.yScale(y1));
-      if (!penState){
-        //that.predictionContext.lineTo(that.xScale(x1 + (dx * magnifaction)), that.yScale(y1 + (dy * magnifaction)));
-        //console.log("lineTo " +  that.xScale(x1 + (dx * magnifaction)) + ", " + that.yScale(y1 + (dy * magnifaction)));
-        that.predictionContext.lineTo(x1 + (dx * magnifaction), y1 + (dy * magnifaction));
-        //console.log("lineTo " + x1 + (dx * magnifaction) + ", " +  y1 + (dy * magnifaction));
-      }
-      else {
-        that.predictionContext.beginPath()
-      }
+  //renderPrediction: function(x1, y1, coordinates)
+  renderPrediction: function(that) {
+    //var that = this;
+    console.log(that.predictionStack.length + " " + that.count);
 
-      that.predictionContext.stroke();
-      that.predictionContext.fill();
-      penState = coords[2];
-      x1 = x1 + (dx * magnifaction);
-      y1 = (y1 + (dy * magnifaction))  % 150;
-      //console.log("x1, y1 " + x1 + " " + y1);
-    });
+    if(that.predictionStack.length > 0 && that.playing && that.count < 20)
+    {
+      coordinates = that.predictionStack.pop();
+      x1 = Math.random() * 40;
+      y1 = Math.random() * 40;
+
+      that.predictionContext.lineWidth = 1;
+      var red = Math.floor( Math.random() * 255);
+      var blue = Math.floor(Math.random() * 255);
+      var green = Math.floor(Math.random() * 255);
+      //var magnifaction = Math.random() * 20;
+      var magnifaction = 5;
+
+      that.context.fillRect(0, 0, that.width, that.height);
+      //sthat.predictionContext.strokeStyle = "rgb(" + red + ", "+ blue + ", " + green + ")"
+      that.predictionContext.fillStyle = "rgba(" + red + ", " + blue + ", " + green + ", 0.2)"
+      var penState = that.userCoordinates.length ? that.userCoordinates[that.userCoordinates.length - 1][2] : 1;
+
+      that.predictionContext.beginPath();
+      x2 = x1;
+      y2 = y1;
+      var v;
+      coordinates.forEach(function(coords) {
+        var dx = coords[0]  * magnifaction,
+            dy = coords[1] * magnifaction;
+        that.predictionContext.moveTo(x1, y1);
+        if (!penState){
+          that.predictionContext.lineTo(x1 + dx, y1 + dy);
+        }
+        else {
+          that.predictionContext.beginPath()
+        }
+
+        that.predictionContext.stroke();
+        that.predictionContext.fill();
+        penState = coords[2];
+        x1 = x1 + dx;
+        y1 = y1 + dy;
+
+      });
+      that.count = that.count + 1;
+    }
   },
 
   //
@@ -358,13 +381,21 @@ Polymer({
 
   setTemperature: function(val) {
     this.temperature = +val;
+    this.resetPrediction();
   },
   setPredictionLength: function(val) {
     this.predictionLength = +val;
+    this.resetPrediction();
   },
   clear: function() {
     this.reset();
   },
+
+  resetPrediction: function() {
+    this.predictionStack = [];
+    this.count = 0;
+  },
+
   Grab: function(evt) {
     console.log("svgGrab");
   },
