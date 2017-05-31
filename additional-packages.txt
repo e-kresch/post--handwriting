@@ -6,4 +6,4 @@ npm install jsdom
 GraphicsManager
 npm install librsvg
 npm install -g node-gyp-install
-FOR MAC: Brew install imagemagick --with-librsvg
+FOR MAC: Brew install imagemagick --with-librsvg gets you rsvg-convert

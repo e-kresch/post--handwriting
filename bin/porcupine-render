@@ -21,7 +21,6 @@ process.stdin.on('end', function() {
   render(JSON.parse(json))
 });
 
-
 function render(coordinates) {
   var numSamples = process.argv[2] ? process.argv[2] : coordinates[0].samples.length;
   var numSegments = process.argv[3] ? process.argv[3] : coordinates[0].samples[0].segments.length;
