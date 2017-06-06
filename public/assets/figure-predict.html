@@ -104,6 +104,7 @@ Polymer({
     this.d = "";
     this.penState = 0;
 
+    this.ratio = 0;
 
     this.xScale = d3.scaleLinear();
     this.yScale = d3.scaleLinear();
@@ -134,8 +135,8 @@ Polymer({
       if (that.playing) {that.play();}
 
     }
-    setInterval(this.renderPrediction, 8000, that);
-    this.drawItIntervalId = setInterval(this.drawIt, 2000, that);
+    setInterval(this.renderPrediction, 2000, that);
+    this.drawItIntervalId = setInterval(this.drawIt, 100, that);
     window.addEventListener("resize", this.resize.bind(this));
     this.reset();
     setTimeout(this.reset.bind(this), 500);
@@ -197,6 +198,8 @@ Polymer({
   reset: function() {
     console.log("reset");
     this.resize();
+    this.resetPrediction();
+    this.setPredictionLength(150);
     this.x = this.xScale(0);
     this.y = this.yScale(0);
     this.dx = 0;
@@ -287,6 +290,10 @@ Polymer({
         that.tempy = d3.event.y;
         that.tempdx = 0;
         that.tempdy = 0;
+        htmlUserPathNodes = document.querySelectorAll("svg#user-svg g.user  path");
+        htmlUserPath = htmlUserPathNodes[htmlUserPathNodes.length - 1];
+        var length = htmlUserPath.getTotalLength();
+        that.setPredictionLength(length)
       }
       that.x = d3.event.x;
       that.y = d3.event.y;
@@ -355,30 +362,28 @@ Polymer({
       predict: this.predictionLength,
       temperature: this.temperature});
   },
-  //diction: function(x1, y1, coordinates)
-  renderPrediction: function(that) {
-    //var that = this;
-  //  console.log(that.predictionStack.length + " " + that.count + " " + that.predictionStrokes.length);
 
-    if(that.predictionStack.length > 0 && that.playing && that.count < 20 && that.predictionStrokes.length < 1 )
+  renderPrediction: function(that) {
+    console.log("render");
+    predictionSvg  = document.querySelectorAll("svg#prediction-output");
+    ratio = that.ratio / (predictionSvg[0].width.baseVal.value * predictionSvg[0].height.baseVal.value )
+    if(that.predictionStack.length > 0 && that.playing && ratio < .3 && that.predictionStrokes.length < 1 )
     {
+      console.log(ratio + " " + that.predictionLength);
       that.predictionStrokes = [];
       document.getElementById("prediction-output").getBBox();
-      predictionSvg  = document.querySelectorAll("svg#prediction-output");
-
       coordinates = that.predictionStack.pop();
       x1 = Math.random() * predictionSvg[0].width.baseVal.value;
       y1 = Math.random() * predictionSvg[0].height.baseVal.value;
-      console.log(x1 +", " + predictionSvg[0].height.baseVal.value  + " " + y1 + ", " + predictionSvg[0].width.baseVal.value);
+      rx = predictionSvg[0].width.baseVal.value / 2;
+      ry = (predictionSvg[0].height.baseVal.value / 2) + predictionSvg[0].style.top ;
+      var r = {angle: Math.floor(Math.random() * 360), x: rx, y:ry};
+
       var red = Math.floor( Math.random() * 255);
       var blue = Math.floor(Math.random() * 255);
       var green = Math.floor(Math.random() * 255);
 
-      //that.predictionSvg.selectAll("path").transition().style("opacity", 0).remove();
-      //that.predictionPath = that.predictionSvg.append("path");
       that.d = "M" + x1 + "," + y1;
-    //  console.log("starting " + x1 + " " + y1 );
-      //that.predictionPath.attr("stroke", "rgb("+ red + ", " + green + ", " + blue + ")");
 
       var magnifaction = 2;
       var penState = that.userCoordinates.length ? that.userCoordinates[that.userCoordinates.length - 1][2] : 1;
@@ -394,9 +399,8 @@ Polymer({
           that.d += "l" + that.xScale(dx) + "," + that.yScale(dy);
         }
         else {
-
           //that.drawIt(that);
-          var stroke = {data: that.d, color: "rgb("+ red + ", " + green + ", " + blue + ")" };
+          var stroke = {data: that.d, color: "rgb("+ red + ", " + green + ", " + blue + ")", rotation: r }
           that.predictionStrokes.push(stroke);
 
           newX1 = x1 + that.xScale(dx);
@@ -405,8 +409,6 @@ Polymer({
           that.d = "M" + newX1 + "," + newY1;
           //console.log("break: " + newX1 + " " + newY1);
           //that.predictionPath.attr("stroke", "rgb("+ red + ", " + green + ", " + blue + ")");
-
-
         }
 
         penState = coords[2];
@@ -418,7 +420,7 @@ Polymer({
 
       //that.drawIt(that);
       //clearInterval(intervalId);
-      var stroke = {data: that.d, color: "rgb("+ red + ", " + green + ", " + blue + ")" }
+      var stroke = {data: that.d, color: "rgb("+ red + ", " + green + ", " + blue + ")", rotation: r }
       that.predictionStrokes.push(stroke);
     }
   },
@@ -426,8 +428,6 @@ Polymer({
   //
   // Events
   //
-
-
   drawIt: function(that) {
 
     if(that.predictionStrokes.length > 0) {
@@ -436,6 +436,7 @@ Polymer({
       that.predictionPath = that.predictionSvg.append("path");
       that.predictionPath.attr("stroke", stroke.color);
       that.predictionPath.attr("d", stroke.data);
+      that.predictionPath.attr("transform", "rotate(" + parseInt(stroke.rotation.angle) + " "  + parseInt(stroke.rotation.x) + " " + parseInt(stroke.rotation.y) + ") " + "translate(" + 0 + ")" );
       htmlPredictionPathNodes = document.querySelectorAll("svg#prediction-output g path");
       htmlPredictionPath = htmlPredictionPathNodes[htmlPredictionPathNodes.length - 1];
       var length = htmlPredictionPath.getTotalLength();
@@ -446,9 +447,12 @@ Polymer({
       htmlPredictionPath.getBoundingClientRect();
       // Define our transition
       htmlPredictionPath.style.transition = htmlPredictionPath.style.WebkitTransition =
-      'stroke-dashoffset 2s ease-in-out';
+      'stroke-dashoffset .01s ease-in-out';
       // Go!
       htmlPredictionPath.style.strokeDashoffset = '0';
+      that.ratio = that.ratio + length;
+
+
     }
     else {
       //clearInterval(that.drawItIntervalId)
